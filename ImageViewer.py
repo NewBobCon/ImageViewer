@@ -11,7 +11,6 @@ from tkinter import *
 import math, os, sys, subprocess
 from PixInfo import PixInfo
 
-
 # Main app.
 class ImageViewer(Frame):
     
@@ -31,6 +30,9 @@ class ImageViewer(Frame):
         # Image size for formatting.
         self.xmax = pixInfo.get_xmax()
         self.ymax = pixInfo.get_ymax()
+        self.list_iterator = -20
+        self.max_iterator = 0
+        self.images_tup = []
         
         
         # Create Main frame.
@@ -53,7 +55,7 @@ class ImageViewer(Frame):
         previewFrame.pack_propagate(0)
         previewFrame.pack(side=RIGHT)
         
-        #Need to figure out how to add in the buttons properly so that they appear next to each other either above or below the returned pictures
+
         # Create Results frame.
         resultsFrame = Frame(self.resultWin)
         resultsFrame.pack(side=BOTTOM)
@@ -63,11 +65,9 @@ class ImageViewer(Frame):
 
         resultsControl = Frame(resultsFrame)
         resultsControl.pack(side=BOTTOM)
-        next20Button = Button(resultsControl, text="Next 20", fg="green", padx=10, width=10, command=lambda: self.show_next())
-        #next20Button.grid(row=0, column=0)
+        next20Button = Button(resultsControl, text="Next 20", fg="green", padx=10, width=10, command=lambda: self.show_next(self.images_tup))
         next20Button.pack(side=RIGHT)
-        prev20Button = Button(resultsControl, text="Last 20", fg="yellow", padx=10, width=10, command=lambda: self.show_prev())
-        #prev20Button.grid(row=0, column=1)
+        prev20Button = Button(resultsControl, text="Last 20", fg="green", padx=10, width=10, command=lambda: self.show_prev(self.images_tup))
         prev20Button.pack(side=LEFT)
         
         
@@ -113,16 +113,47 @@ class ImageViewer(Frame):
     # directory uses the comparison method of the passed 
     # binList
     def find_distance(self, method):
+        self.list_iterator = -20
+        self.max_iterator = 0
         sortedTup = []
         for i in range(len(self.imageList)):
             filename = self.imageList[i].filename
             img = self.photoList[i]
             fileObj = [filename, img]
             sortedTup.append(fileObj)
-        self.update_results(sortedTup)
+        self.images_tup = sortedTup
+        self.show_next(sortedTup)
         return
-	#your code    
-    
+	#your code
+
+    def show_next(self, sortedTup):
+        if(self.max_iterator >= len(sortedTup)):
+            print("Out of range")
+            return
+        self.list_iterator += 20
+        self.max_iterator += 20
+        Tup20 = []
+        for i in range(self.list_iterator, self.max_iterator):
+            Tup20.append(sortedTup[i])
+        print(self.list_iterator)
+        print(self.max_iterator)
+        self.update_results(Tup20)
+        return
+
+    def show_prev(self, sortedTup):  
+        if(self.max_iterator <= 20):
+            print("Out of range")
+            return
+        Tup20 = []
+        self.list_iterator -= 20
+        self.max_iterator -= 20
+        for i in range(self.list_iterator, self.max_iterator):
+            Tup20.append(sortedTup[i])
+        print(self.list_iterator)
+        print(self.max_iterator)
+        self.update_results(Tup20)
+        return
+
     # Update the results window with the sorted results.
     def update_results(self, sortedTup):
         cols = int(math.ceil(math.sqrt(len(sortedTup))))
@@ -144,10 +175,10 @@ class ImageViewer(Frame):
         rowPos = 0
         while photoRemain:
             photoRow = photoRemain[:cols]
-            print(photoRow)
+            #print(photoRow)
             photoRemain = photoRemain[cols:]
             colPos = 0
-            print(photoRow[0])
+            #print(photoRow[0])
             for (filename, img) in photoRow:
                 link = Button(self.canvas, image=img)
                 handler = lambda f=filename: self.inspect_pic(f)
