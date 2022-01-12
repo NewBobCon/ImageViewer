@@ -55,6 +55,8 @@ class PixInfo:
             CcBins, InBins = self.encode(pixList)
             self.colorCode.append(CcBins)
             self.intenCode.append(InBins)
+            return
+        
             
 
     # Bin function returns an array of bins for each 
@@ -65,10 +67,32 @@ class PixInfo:
         # to zero.
         CcBins = [0]*64
         InBins = [0]*25
-        
-                    
+
            #your code
-        
+        bitmask = 192
+        for pixel in pixlist:
+            
+            #Color coding
+            R = pixel[0] & bitmask
+            G = pixel[1] & bitmask
+            B = pixel[2] & bitmask
+
+            colorCode = 0
+            colorCode += B
+            colorCode = colorCode >> 2
+            colorCode += G
+            colorCode = colorCode >> 2
+            colorCode += R
+            colorCode = colorCode >> 2
+            CcBins[colorCode] += 1
+
+            #Intensity coding
+            intensity = pixel[0] * 0.299 + pixel[1] * 0.587 + pixel[2] * 0.114
+            intensity = int(intensity / 10)
+            if intensity > 24:
+                intensity = 24
+            InBins[intensity] += 1
+
         # Return the list of binary digits, one digit for each
         # pixel.
         return CcBins, InBins
