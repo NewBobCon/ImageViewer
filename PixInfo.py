@@ -12,6 +12,7 @@ class PixInfo:
     def __init__(self, master):
     
         self.master = master
+        self.pixSizeList = []
         self.imageList = []
         self.photoList = []
         self.xmax = 0
@@ -21,6 +22,7 @@ class PixInfo:
         
         # Add each image (for evaluation) into a list, 
         # and a Photo from the image (for the GUI) in a list.
+
         for infile in glob.glob('images/*.jpg'):
             
             file, ext = os.path.splitext(infile)
@@ -52,11 +54,11 @@ class PixInfo:
         for im in self.imageList[:]:
             
             pixList = list(im.getdata())
+            self.pixSizeList.append(len(pixList))
             CcBins, InBins = self.encode(pixList)
             self.colorCode.append(CcBins)
             self.intenCode.append(InBins)
-            return
-        
+            #return
             
 
     # Bin function returns an array of bins for each 
@@ -99,6 +101,8 @@ class PixInfo:
     
     
     # Accessor functions:
+    def get_pixSizeList(self):
+        return self.pixSizeList
     def get_imageList(self):
         return self.imageList
     

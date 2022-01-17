@@ -4,9 +4,6 @@
 # Show the image with:
 # os.startfile(imageList[n].filename)
 
-
-
-
 from tkinter import *
 import math, os, sys, subprocess
 from PixInfo import PixInfo
@@ -21,6 +18,7 @@ class ImageViewer(Frame):
         self.master    = master
         self.pixInfo   = pixInfo
         self.resultWin = resultWin
+        self.pixSizeList = pixInfo.get_pixSizeList()
         self.colorCode = pixInfo.get_colorCode()
         self.intenCode = pixInfo.get_intenCode()
         # Full-sized images.
@@ -58,7 +56,7 @@ class ImageViewer(Frame):
 
         # Create Results frame.
         resultsFrame = Frame(self.resultWin)
-        resultsFrame.pack(side=BOTTOM)
+        resultsFrame.pack(side=TOP)
         self.canvas = Canvas(resultsFrame)
         self.resultsScrollbar = Scrollbar(resultsFrame)
         self.resultsScrollbar.pack(side=RIGHT, fill=Y)
@@ -113,44 +111,68 @@ class ImageViewer(Frame):
     # directory uses the comparison method of the passed 
     # binList
     def find_distance(self, method):
+        selected = self.list.curselection()[0]
         self.list_iterator = -20
         self.max_iterator = 0
         sortedTup = []
-        for i in range(len(self.imageList)):
-            filename = self.imageList[i].filename
-            img = self.photoList[i]
+        sortedTup = self.man_dis(method, selected)
+        sortedTup.sort(key=lambda x: x[2])
+        for i in range(len(sortedTup)):
+            filename = sortedTup[i][0].filename
+            img = sortedTup[i][1]
             fileObj = [filename, img]
-            sortedTup.append(fileObj)
+            sortedTup[i] = fileObj
         self.images_tup = sortedTup
         self.show_next(sortedTup)
         return
 	#your code
 
+    def man_dis(self, method, selected):
+        selectedPixSize = self.pixSizeList[selected]
+        distance = 0
+        count = 0
+        distanceList = []
+        if method == "CC":
+            selectedCC = self.colorCode[selected]                
+            for i in self.colorCode:
+                distance = 0
+                for j in range(len(i)):
+                    otherPixSize = self.pixSizeList[count] #len(list(self.imageList[count].getdata()))
+                    distance += abs((selectedCC[j] / selectedPixSize) - (i[j] / otherPixSize))  
+                distanceList.append([self.imageList[count], self.photoList[count] ,distance])
+                count += 1
+            return distanceList
+        if method == "inten":
+            selectedIn = self.intenCode[selected]
+            for i in self.intenCode:
+                distance = 0
+                for j in range(len(i)):
+                    otherPixSize = self.pixSizeList[count] #len(list(self.imageList[count].getdata()))
+                    distance += abs((selectedIn[j] / selectedPixSize) - (i[j] / otherPixSize))  
+                distanceList.append([self.imageList[count], self.photoList[count] ,distance])
+                count += 1
+            return distanceList
+        return
+
     def show_next(self, sortedTup):
         if(self.max_iterator >= len(sortedTup)):
-            print("Out of range")
             return
         self.list_iterator += 20
         self.max_iterator += 20
         Tup20 = []
         for i in range(self.list_iterator, self.max_iterator):
             Tup20.append(sortedTup[i])
-        print(self.list_iterator)
-        print(self.max_iterator)
         self.update_results(Tup20)
         return
 
     def show_prev(self, sortedTup):  
         if(self.max_iterator <= 20):
-            print("Out of range")
             return
         Tup20 = []
         self.list_iterator -= 20
         self.max_iterator -= 20
         for i in range(self.list_iterator, self.max_iterator):
             Tup20.append(sortedTup[i])
-        print(self.list_iterator)
-        print(self.max_iterator)
         self.update_results(Tup20)
         return
 
@@ -162,7 +184,7 @@ class ImageViewer(Frame):
         # Initialize the canvas with dimensions equal to the 
         # number of results.
         self.canvas.delete(ALL)
-        resultWin.geometry(str(int(self.xmax*cols)) + 'x' + str(int(self.ymax*cols/2)))
+        #resultWin.geometry(str(int(self.xmax*cols)) + 'x' + str(int(self.ymax*cols/2)))
         self.canvas.config(width=self.xmax*cols, height=self.ymax*cols/2, yscrollcommand=self.resultsScrollbar.set, scrollregion=fullsize)
         self.canvas.pack()
         self.resultsScrollbar.config(command=self.canvas.yview)
@@ -175,10 +197,8 @@ class ImageViewer(Frame):
         rowPos = 0
         while photoRemain:
             photoRow = photoRemain[:cols]
-            #print(photoRow)
             photoRemain = photoRemain[cols:]
             colPos = 0
-            #print(photoRow[0])
             for (filename, img) in photoRow:
                 link = Button(self.canvas, image=img)
                 handler = lambda f=filename: self.inspect_pic(f)
@@ -207,7 +227,7 @@ if __name__ == '__main__':
     root.title('Image Analysis Tool')
 
     resultWin = Toplevel(root)
-    resultWin.geometry('300x300')
+    #resultWin.geometry('300x300')
     resultWin.title('Result Viewer')
     resultWin.protocol('WM_DELETE_WINDOW', lambda: None)
 
