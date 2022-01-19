@@ -63,6 +63,8 @@ class ImageViewer(Frame):
 
         resultsControl = Frame(resultsFrame)
         resultsControl.pack(side=BOTTOM)
+
+        # Add Buttons to results screen
         next20Button = Button(resultsControl, text="Next 20", fg="green", padx=10, width=10, command=lambda: self.show_next(self.images_tup))
         next20Button.pack(side=RIGHT)
         prev20Button = Button(resultsControl, text="Last 20", fg="green", padx=10, width=10, command=lambda: self.show_prev(self.images_tup))
@@ -111,22 +113,25 @@ class ImageViewer(Frame):
     # directory uses the comparison method of the passed 
     # binList
     def find_distance(self, method):
-        selected = self.list.curselection()[0]
+        selected = self.list.curselection()[0] #Grab the selected image
         self.list_iterator = -20
         self.max_iterator = 0
         sortedTup = []
-        sortedTup = self.man_dis(method, selected)
-        sortedTup.sort(key=lambda x: x[2])
-        for i in range(len(sortedTup)):
+        sortedTup = self.man_dis(method, selected) #Get manhattan distance on the selected image using proper method. Returns as [[filename, image_preview, distance_val]]
+        sortedTup.sort(key=lambda x: x[2]) #Sort by the distance value returned
+        for i in range(len(sortedTup)): #Iterate through the sorted list to retrieve the file names and images for proper output to results page
             filename = sortedTup[i][0].filename
             img = sortedTup[i][1]
             fileObj = [filename, img]
             sortedTup[i] = fileObj
-        self.images_tup = sortedTup
-        self.show_next(sortedTup)
+        self.images_tup = sortedTup #Allow self to reference the sorted list
+        self.show_next(sortedTup) #Push the sorted images to the results screen
         return
-	#your code
 
+    # Manhattan distance function that takes in a method (color code or intensity)
+    # and the selected image to compare all other images to.
+    # Finds the distance value and puts them into a list
+    # to be returned to the find_distance function.
     def man_dis(self, method, selected):
         selectedPixSize = self.pixSizeList[selected]
         distance = 0
@@ -137,7 +142,7 @@ class ImageViewer(Frame):
             for i in self.colorCode:
                 distance = 0
                 for j in range(len(i)):
-                    otherPixSize = self.pixSizeList[count] #len(list(self.imageList[count].getdata()))
+                    otherPixSize = self.pixSizeList[count]
                     distance += abs((selectedCC[j] / selectedPixSize) - (i[j] / otherPixSize))  
                 distanceList.append([self.imageList[count], self.photoList[count] ,distance])
                 count += 1
@@ -147,13 +152,16 @@ class ImageViewer(Frame):
             for i in self.intenCode:
                 distance = 0
                 for j in range(len(i)):
-                    otherPixSize = self.pixSizeList[count] #len(list(self.imageList[count].getdata()))
+                    otherPixSize = self.pixSizeList[count]
                     distance += abs((selectedIn[j] / selectedPixSize) - (i[j] / otherPixSize))  
                 distanceList.append([self.imageList[count], self.photoList[count] ,distance])
                 count += 1
             return distanceList
         return
 
+    # Increment the results page to the next 20
+    # images while checking to make sure it's not
+    # gone past the max number of images.
     def show_next(self, sortedTup):
         if(self.max_iterator >= len(sortedTup)):
             return
@@ -165,6 +173,9 @@ class ImageViewer(Frame):
         self.update_results(Tup20)
         return
 
+    # Decrements the results page to the last 20
+    # images while checking to make sure it's not
+    # gone past the minumum number of images.
     def show_prev(self, sortedTup):  
         if(self.max_iterator <= 20):
             return
@@ -189,7 +200,6 @@ class ImageViewer(Frame):
         self.canvas.pack()
         self.resultsScrollbar.config(command=self.canvas.yview)
         
-        # your code
         photoRemain = sortedTup
         
         # Place images on buttons, then on the canvas in order
@@ -227,7 +237,6 @@ if __name__ == '__main__':
     root.title('Image Analysis Tool')
 
     resultWin = Toplevel(root)
-    #resultWin.geometry('300x300')
     resultWin.title('Result Viewer')
     resultWin.protocol('WM_DELETE_WINDOW', lambda: None)
 

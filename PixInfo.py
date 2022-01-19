@@ -70,9 +70,9 @@ class PixInfo:
         CcBins = [0]*64
         InBins = [0]*25
 
-           #your code
+        # Integer variable that represents the decimal value of a bit mask for the color code method
         bitmask = 192
-        for pixel in pixlist:
+        for pixel in pixlist: #Iterate over every pixel of the image and create the color code/intensity values
             
             #Color coding
             R = pixel[0] & bitmask
@@ -103,6 +103,7 @@ class PixInfo:
     # Accessor functions:
     def get_pixSizeList(self):
         return self.pixSizeList
+    
     def get_imageList(self):
         return self.imageList
     
