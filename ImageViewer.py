@@ -90,11 +90,15 @@ class ImageViewer(Frame):
         self.b1 = Button(controlFrame, text="Color-Code", padx = 10, width=10, command=lambda: self.find_distance(method='CC'))
         self.b1.grid(row=1, sticky=E)
         
-        b2 = Button(controlFrame, text="Intensity", padx = 10, width=10, command=lambda: self.find_distance(method='inten'))
-        b2.grid(row=2, sticky=E)
-        
+        self.b2 = Button(controlFrame, text="Intensity", padx = 10, width=10, command=lambda: self.find_distance(method='inten'))
+        self.b2.grid(row=2, sticky=E)
+
+        self.var1 = IntVar()
+        self.b3 = Checkbutton(controlFrame, text="Relevance", variable=self.var1, onvalue=1, offvalue=0, command=lambda: self.find_distance(method='relevance'))
+        self.b3.grid(row=3, sticky=E)
+
         self.resultLbl = Label(controlFrame, text="Results:")
-        self.resultLbl.grid(row=3, sticky=W)
+        self.resultLbl.grid(row=4, sticky=W)
         
         
         # Layout Preview.
@@ -113,6 +117,7 @@ class ImageViewer(Frame):
     # directory uses the comparison method of the passed 
     # binList
     def find_distance(self, method):
+        print(self.var1.get())
         selected = self.list.curselection()[0] #Grab the selected image
         self.list_iterator = -20
         self.max_iterator = 0
@@ -135,9 +140,9 @@ class ImageViewer(Frame):
     def man_dis(self, method, selected):
         selectedPixSize = self.pixSizeList[selected]
         distance = 0
-        count = 0
         distanceList = []
-        if method == "CC":
+        if method == "CC" or method == "relevance":
+            count = 0
             selectedCC = self.colorCode[selected]                
             for i in self.colorCode:
                 distance = 0
@@ -146,8 +151,10 @@ class ImageViewer(Frame):
                     distance += abs((selectedCC[j] / selectedPixSize) - (i[j] / otherPixSize))  
                 distanceList.append([self.imageList[count], self.photoList[count] ,distance])
                 count += 1
-            return distanceList
-        if method == "inten":
+            if method == "CC":
+                return distanceList
+        if method == "inten" or method == "relevance":
+            count = 0
             selectedIn = self.intenCode[selected]
             for i in self.intenCode:
                 distance = 0
@@ -156,8 +163,9 @@ class ImageViewer(Frame):
                     distance += abs((selectedIn[j] / selectedPixSize) - (i[j] / otherPixSize))  
                 distanceList.append([self.imageList[count], self.photoList[count] ,distance])
                 count += 1
-            return distanceList
-        return
+            if method == "inten":
+                return distanceList
+        return distanceList
 
     # Increment the results page to the next 20
     # images while checking to make sure it's not
@@ -215,6 +223,9 @@ class ImageViewer(Frame):
                 link.config(command=handler)
                 link.pack(side=LEFT, expand=YES)
                 self.canvas.create_window(colPos, rowPos, anchor=NW, window=link, width=self.xmax, height=self.ymax)
+                if self.var1.get() == 1:
+                    relButton = Checkbutton(link, text="relevant")
+                    relButton.pack(side=BOTTOM)
                 colPos += self.xmax
                 
             rowPos += self.ymax
