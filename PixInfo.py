@@ -3,6 +3,7 @@
 
 from PIL import Image, ImageTk
 import glob, os, math, re
+import statistics
 
 
 # Pixel Info class.
@@ -19,6 +20,7 @@ class PixInfo:
         self.ymax = 0
         self.colorCode = []
         self.intenCode = []
+        self.normalizedFeatureList = []
         
         # Add each image (for evaluation) into a list, 
         # and a Photo from the image (for the GUI) in a list.
@@ -63,7 +65,27 @@ class PixInfo:
             CcBins, InBins = self.encode(pixList)
             self.colorCode.append(CcBins)
             self.intenCode.append(InBins)
-            #return
+            Features = []
+            for j in CcBins:
+                Features.append(j / len(pixList))
+            for j in InBins:
+                Features.append(j / len(pixList))
+            self.normalizedFeatureList.append(Features)
+
+        for i in range(89):
+            sample = []
+            for j in range(100):
+                sample.append(self.normalizedFeatureList[j][i])
+            stdeviation = statistics.stdev(sample)
+            average = statistics.mean(sample)
+            for k in range(100):
+                if stdeviation == 0:
+                    self.normalizedFeatureList[k][i] = 0
+                else:
+                    self.normalizedFeatureList[k][i] = (self.normalizedFeatureList[k][i] - average) / stdeviation
+            
+
+        
             
 
     # Bin function returns an array of bins for each 
@@ -104,7 +126,6 @@ class PixInfo:
         # pixel.
         return CcBins, InBins
     
-    
     # Accessor functions:
     def get_pixSizeList(self):
         return self.pixSizeList
@@ -126,5 +147,8 @@ class PixInfo:
         
     def get_intenCode(self):
         return self.intenCode
+    
+    def get_normalizedFeatureList(self):
+        return self.normalizedFeatureList
     
     

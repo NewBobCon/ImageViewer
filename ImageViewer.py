@@ -21,6 +21,7 @@ class ImageViewer(Frame):
         self.pixSizeList = pixInfo.get_pixSizeList()
         self.colorCode = pixInfo.get_colorCode()
         self.intenCode = pixInfo.get_intenCode()
+        self.normalizedFeatureList = pixInfo.get_normalizedFeatureList()
         # Full-sized images.
         self.imageList = pixInfo.get_imageList()
         # Thumbnail sized images.
@@ -30,6 +31,8 @@ class ImageViewer(Frame):
         self.ymax = pixInfo.get_ymax()
         self.list_iterator = -20
         self.max_iterator = 0
+        self.var1 = IntVar()
+        self.queryChange = False
         self.images_tup = []
         #Relevancy CheckButton variable list
         self.varList = []
@@ -73,7 +76,7 @@ class ImageViewer(Frame):
         next20Button.pack(side=RIGHT)
         prev20Button = Button(resultsControl, text="Last 20", fg="green", padx=10, width=10, command=lambda: self.show_prev(self.images_tup))
         prev20Button.pack(side=LEFT)
-        
+        self.relCheckButton = Checkbutton(resultsControl, text="Relevance", variable=self.var1, onvalue=1, offvalue=0, command=lambda: self.update_results(self.images_tup[self.list_iterator:self.max_iterator]))
         
         # Layout Picture Listbox.
         self.listScrollbar = Scrollbar(listFrame)
@@ -100,13 +103,8 @@ class ImageViewer(Frame):
         self.b3 = Button(controlFrame, text="CC + Intensity", padx = 10, width = 10, command=lambda: self.find_distance(method="CC+inten"))
         self.b3.grid(row=3, sticky=NSEW)
 
-        self.var1 = IntVar()
-        self.b4 = Checkbutton(controlFrame, text="Relevance", variable=self.var1, onvalue=1, offvalue=0, command=lambda: self.update_results(self.images_tup[self.list_iterator:self.max_iterator]))
-        self.b4.grid(row=4, sticky=NSEW)
-
         self.resultLbl = Label(controlFrame, text="Results:")
-        self.resultLbl.grid(row=5, sticky=NSEW)
-        
+        self.resultLbl.grid(row=4, sticky=NSEW)
         
         # Layout Preview.
         self.selectImg = Label(previewFrame, image=self.photoList[0])
@@ -115,6 +113,7 @@ class ImageViewer(Frame):
     
     # Event "listener" for listbox change.
     def update_preview(self, event):
+        self.queryChange = True
         i = self.list.curselection()[0]
         self.selectImg.configure(image=self.photoList[int(i)])
     
@@ -149,18 +148,35 @@ class ImageViewer(Frame):
         count = 0
         distanceList = []
         if method == "CC+inten":
-            selectedCC = self.colorCode[selected]
-            selectedIn = self.intenCode[selected]                
-            for i,j in zip(self.colorCode, self.intenCode):
+            if self.queryChange:
+                for i in range(100):
+                    self.varList[i] = IntVar()
+                self.queryChange = False
+            self.relCheckButton.pack(side=TOP)
+            selectedFeats = self.normalizedFeatureList[selected]
+            for i in self.normalizedFeatureList:
                 distance = 0
-                for k in range(len(i)):
-                    otherPixSize = self.pixSizeList[count]
-                    distance += abs((selectedCC[k] / selectedPixSize) - (i[k] / otherPixSize))
-                for l in range(len(j)):    
-                    distance += abs((selectedIn[l] / selectedPixSize) - (j[l] / otherPixSize))  
-                distanceList.append([self.imageList[count], self.photoList[count] ,distance])
+                for j in range(len(i)):
+                    distance += 1/89 * abs(selectedFeats[j] - self.normalizedFeatureList[count][j])
+                distanceList.append([self.imageList[count], self.photoList[count], distance])
                 count += 1
+            # selectedCC = self.colorCode[selected]
+            # selectedIn = self.intenCode[selected]                
+            # for i,j in zip(self.colorCode, self.intenCode):
+            #     distance = 0
+            #     for k in range(len(i)):
+            #         otherPixSize = self.pixSizeList[count]
+            #         distance += abs((selectedCC[k] / selectedPixSize) - (i[k] / otherPixSize))
+            #     for l in range(len(j)):    
+            #         distance += abs((selectedIn[l] / selectedPixSize) - (j[l] / otherPixSize))  
+            #     distanceList.append([self.imageList[count], self.photoList[count] ,distance])
+            #    count += 1
         elif method == "CC":
+            if(self.var1.get() == 1):
+                for i in range(100):
+                    self.varList[i] = IntVar()
+            self.relCheckButton.pack_forget()
+            self.var1.set(0)
             selectedCC = self.colorCode[selected]                
             for i in self.colorCode:
                 distance = 0
@@ -170,6 +186,11 @@ class ImageViewer(Frame):
                 distanceList.append([self.imageList[count], self.photoList[count] ,distance])
                 count += 1
         elif method == "inten":
+            if(self.var1.get() == 1):
+                for i in range(100):
+                    self.varList[i] = IntVar()
+            self.relCheckButton.pack_forget()
+            self.var1.set(0)
             selectedIn = self.intenCode[selected]
             for i in self.intenCode:
                 distance = 0
