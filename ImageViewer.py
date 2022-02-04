@@ -33,6 +33,10 @@ class ImageViewer(Frame):
         self.images_tup = []
         #Relevancy CheckButton variable list
         self.varList = []
+
+        for i in range(100):
+            self.varList.append(IntVar())
+        print(len(self.varList))
         
         
         # Create Main frame.
@@ -60,8 +64,6 @@ class ImageViewer(Frame):
         resultsFrame = Frame(self.resultWin)
         resultsFrame.pack(side=TOP)
         self.canvas = Canvas(resultsFrame)
-        self.resultsScrollbar = Scrollbar(resultsFrame)
-        self.resultsScrollbar.pack(side=RIGHT, fill=Y)
 
         resultsControl = Frame(resultsFrame)
         resultsControl.pack(side=BOTTOM)
@@ -87,23 +89,23 @@ class ImageViewer(Frame):
         
         # Layout Controls.
         button = Button(controlFrame, text="Inspect Pic", fg="red", padx = 10, width=10, command=lambda: self.inspect_pic(self.list.get(ACTIVE)))
-        button.grid(row=0, sticky=E)
+        button.grid(row=0, sticky=NSEW)
         
         self.b1 = Button(controlFrame, text="Color-Code", padx = 10, width=10, command=lambda: self.find_distance(method='CC'))
-        self.b1.grid(row=1, sticky=E)
+        self.b1.grid(row=1, sticky=NSEW)
         
         self.b2 = Button(controlFrame, text="Intensity", padx = 10, width=10, command=lambda: self.find_distance(method='inten'))
-        self.b2.grid(row=2, sticky=E)
+        self.b2.grid(row=2, sticky=NSEW)
 
         self.b3 = Button(controlFrame, text="CC + Intensity", padx = 10, width = 10, command=lambda: self.find_distance(method="CC+inten"))
-        self.b3.grid(row=3, sticky=E)
+        self.b3.grid(row=3, sticky=NSEW)
 
         self.var1 = IntVar()
         self.b4 = Checkbutton(controlFrame, text="Relevance", variable=self.var1, onvalue=1, offvalue=0, command=lambda: self.update_results(self.images_tup[self.list_iterator:self.max_iterator]))
-        self.b4.grid(row=4, sticky=E)
+        self.b4.grid(row=4, sticky=NSEW)
 
         self.resultLbl = Label(controlFrame, text="Results:")
-        self.resultLbl.grid(row=5, sticky=W)
+        self.resultLbl.grid(row=5, sticky=NSEW)
         
         
         # Layout Preview.
@@ -209,15 +211,12 @@ class ImageViewer(Frame):
     # Update the results window with the sorted results.
     def update_results(self, sortedTup):
         cols = int(math.ceil(math.sqrt(len(sortedTup))))
-        fullsize = (0, 0, (self.xmax*cols), (self.ymax*cols))
         
         # Initialize the canvas with dimensions equal to the 
         # number of results.
         self.canvas.delete(ALL)
-        #resultWin.geometry(str(int(self.xmax*cols)) + 'x' + str(int(self.ymax*cols/2)))
-        self.canvas.config(width=self.xmax*cols, height=self.ymax*cols/2, yscrollcommand=self.resultsScrollbar.set, scrollregion=fullsize)
+        self.canvas.config(width=self.xmax*cols, height=self.ymax*cols/1.25)
         self.canvas.pack()
-        self.resultsScrollbar.config(command=self.canvas.yview)
         
         photoRemain = sortedTup
         
@@ -234,15 +233,15 @@ class ImageViewer(Frame):
                 link = Button(self.canvas, image=img)
                 handler = lambda f=filename: self.inspect_pic(f)
                 link.config(command=handler)
-                link.pack(side=LEFT, expand=YES)
+                link.pack(side=LEFT)
                 self.canvas.create_window(colPos, rowPos, anchor=NW, window=link, width=self.xmax, height=self.ymax)
                 if self.var1.get() == 1:
                     print(self.list_iterator + counter)
-                    self.varList.append(IntVar())
                     relButton = Checkbutton(link, text="relevant", variable = self.varList[self.list_iterator + counter], onvalue=1, offvalue=0)
                     relButton.pack(side=BOTTOM)
                 else:
-                    self.varList.clear()
+                    for i in range(100):
+                        self.varList[i] = IntVar()
                 colPos += self.xmax
                 counter += 1
                 

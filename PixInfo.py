@@ -2,7 +2,7 @@
 # Program to start evaluating an image in python
 
 from PIL import Image, ImageTk
-import glob, os, math
+import glob, os, math, re
 
 
 # Pixel Info class.
@@ -22,8 +22,13 @@ class PixInfo:
         
         # Add each image (for evaluation) into a list, 
         # and a Photo from the image (for the GUI) in a list.
+        nums = re.compile(r'(\d+)')
+        def imgSort(num):
+            parts = nums.split(num)
+            parts[1::2] = map(int, parts[1::2])
+            return parts
 
-        for infile in glob.glob('images/*.jpg'):
+        for infile in sorted(glob.glob('images/*.jpg'), key=imgSort):
             
             file, ext = os.path.splitext(infile)
             im = Image.open(infile)
@@ -31,8 +36,8 @@ class PixInfo:
             
             # Resize the image for thumbnails.
             imSize = im.size
-            x = int(imSize[0]/4)
-            y = int(imSize[1]/4)
+            x = int(imSize[0]/2)
+            y = int(imSize[1]/2)
             imResize = im.resize((x, y), Image.ANTIALIAS)
             photo = ImageTk.PhotoImage(imResize)
             
