@@ -31,7 +31,6 @@ class PixInfo:
             return parts
 
         for infile in sorted(glob.glob('images/*.jpg'), key=imgSort):
-            
             file, ext = os.path.splitext(infile)
             im = Image.open(infile)
             
@@ -84,9 +83,6 @@ class PixInfo:
                     self.normalizedFeatureList[k][i] = 0
                 else:
                     self.normalizedFeatureList[k][i] = (self.normalizedFeatureList[k][i] - average) / stdeviation
-            
-
-        
             
 
     # Bin function returns an array of bins for each 

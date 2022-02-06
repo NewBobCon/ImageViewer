@@ -36,7 +36,6 @@ class ImageViewer(Frame):
         self.images_tup = []
         #Relevancy CheckButton variable list
         self.varList = []
-
         self.relList = []
 
         for i in range(100):
@@ -155,6 +154,8 @@ class ImageViewer(Frame):
         distance = 0
         count = 0
         distanceList = []
+        self.relList = []
+
         if method == "CC+inten":
             if self.queryChange:
                 for i in range(100):
@@ -168,8 +169,9 @@ class ImageViewer(Frame):
                 weightSum = 0
                 self.relList.append([self.normalizedFeatureList[self.images_tup[0][3]], 0, self.images_tup[0][0]])
                 for i in range(1, 100):
-                    if self.varList[i].get() == 1 and self.normalizedFeatureList[self.images_tup[i][3]] not in self.relList:
-                        self.relList.append([self.normalizedFeatureList[self.images_tup[i][3]], i, self.images_tup[i][0]])
+                    if self.varList[i].get() == 1:
+                        self.relList.append([self.normalizedFeatureList[self.images_tup[i][3]], i, self.images_tup[i][0]])                                
+                print(len(self.relList))
                 for i in range(89):
                     sample = []
                     for j in range(len(self.relList)):
@@ -197,7 +199,6 @@ class ImageViewer(Frame):
                         distance += weightList[j] * abs(self.relList[0][0][j] - self.normalizedFeatureList[self.images_tup[i][3]][j])
                     self.images_tup[i][2] = distance
                 return self.images_tup
-
             self.relCheckButton.pack(side=TOP)
             selectedFeats = self.normalizedFeatureList[selected]
             for i in self.normalizedFeatureList:
@@ -206,17 +207,7 @@ class ImageViewer(Frame):
                     distance += 1/89 * abs(selectedFeats[j] - self.normalizedFeatureList[count][j])
                 distanceList.append([self.imageList[count], self.photoList[count], distance, count])
                 count += 1
-            # selectedCC = self.colorCode[selected]
-            # selectedIn = self.intenCode[selected]                
-            # for i,j in zip(self.colorCode, self.intenCode):
-            #     distance = 0
-            #     for k in range(len(i)):
-            #         otherPixSize = self.pixSizeList[count]
-            #         distance += abs((selectedCC[k] / selectedPixSize) - (i[k] / otherPixSize))
-            #     for l in range(len(j)):    
-            #         distance += abs((selectedIn[l] / selectedPixSize) - (j[l] / otherPixSize))  
-            #     distanceList.append([self.imageList[count], self.photoList[count] ,distance])
-            #    count += 1
+
         elif method == "CC":
             if(self.var1.get() == 1):
                 for i in range(100):
@@ -231,6 +222,7 @@ class ImageViewer(Frame):
                     distance += abs((selectedCC[j] / selectedPixSize) - (i[j] / otherPixSize))  
                 distanceList.append([self.imageList[count], self.photoList[count] ,distance, count])
                 count += 1
+
         elif method == "inten":
             if(self.var1.get() == 1):
                 for i in range(100):
@@ -245,6 +237,7 @@ class ImageViewer(Frame):
                     distance += abs((selectedIn[j] / selectedPixSize) - (i[j] / otherPixSize))  
                 distanceList.append([self.imageList[count], self.photoList[count] ,distance, count])
                 count += 1
+
         return distanceList
 
     # Increment the results page to the next 20
