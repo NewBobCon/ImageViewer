@@ -24,7 +24,7 @@ class PixInfo:
         
         # Add each image (for evaluation) into a list, 
         # and a Photo from the image (for the GUI) in a list.
-        nums = re.compile(r'(\d+)')
+        nums = re.compile(r'(\d+)') #Regex pattern and function to help sort the image file names to show up in numerical order
         def imgSort(num):
             parts = nums.split(num)
             parts[1::2] = map(int, parts[1::2])
@@ -64,14 +64,16 @@ class PixInfo:
             CcBins, InBins = self.encode(pixList)
             self.colorCode.append(CcBins)
             self.intenCode.append(InBins)
-            Features = []
+            Features = [] #Create a feature list that includes both the intesity and color code bins for every image
             for j in CcBins:
                 Features.append(j / len(pixList))
             for j in InBins:
                 Features.append(j / len(pixList))
             
-            self.normalizedFeatureList.append(Features)
+            self.normalizedFeatureList.append(Features) #append the features gathered to the larger list that contains features for all images
 
+        #For every feature of every image, gather the standard deviation and the average
+        #Use this information to normalize the features in the feature list 
         for i in range(89):
             sample = []
             for j in range(100):

@@ -33,10 +33,9 @@ class ImageViewer(Frame):
         self.max_iterator = 0
         self.var1 = IntVar()
         self.queryChange = False
-        self.images_tup = []
-        #Relevancy CheckButton variable list
-        self.varList = []
-        self.relList = []
+        self.images_tup = [] #List of images given by the sortedTup
+        self.varList = [] #Relevancy CheckButton variable list
+        self.relList = [] #List of only the relevant images found in man_dis()
 
         for i in range(100):
             self.varList.append(IntVar())
@@ -67,7 +66,6 @@ class ImageViewer(Frame):
         resultsFrame = Frame(self.resultWin)
         resultsFrame.pack(side=TOP)
         self.canvas = Canvas(resultsFrame)
-
         resultsControl = Frame(resultsFrame)
         resultsControl.pack(side=BOTTOM)
 
@@ -113,7 +111,7 @@ class ImageViewer(Frame):
     
     # Event "listener" for listbox change.
     def update_preview(self, event):
-        self.queryChange = True
+        self.queryChange = True #When the cursor selects an item in the scroll box on the image viewer it will be deemed as choosing a new query image
         i = self.list.curselection()[0]
         self.selectImg.configure(image=self.photoList[int(i)])
     
@@ -134,6 +132,7 @@ class ImageViewer(Frame):
                 filename = sortedTup[i][0].filename
                 sortedTup[i][0] = filename
         else:
+            #Only turn on the checkButtons of the relevant images from relList. (since their position might change after iterating)
             for i, im in enumerate(sortedTup):
                 for rel in self.relList:
                     if im[0] == rel[2]:
@@ -154,58 +153,58 @@ class ImageViewer(Frame):
         distance = 0
         count = 0
         distanceList = []
-        self.relList = []
+        self.relList = [] #reset relList so that we don't run into duplicat image issues
 
         if method == "CC+inten":
-            if self.queryChange:
+            if self.queryChange: #resets the varList if a different query image is selected
                 for i in range(100):
                     self.varList[i] = IntVar()  
                 self.queryChange = False
-            if self.varList[0].get() != 0:
-                stdevavgList = []
-                weightList = []
-                minStdev = sys.maxsize
-                weight = 1
-                weightSum = 0
-                self.relList.append([self.normalizedFeatureList[self.images_tup[0][3]], 0, self.images_tup[0][0]])
-                for i in range(1, 100):
+            if self.varList[0].get() != 0: #As long as the query image is selected as relevant it is assumed that this is not the first iteration of RF
+                stdevavgList = [] #A list used to keep the standard deviation and average for each feature
+                weightList = [] #A normalized list of updated weights
+                minStdev = sys.maxsize #Keep track of the min standard deviation for edge case when updating weights
+                weight = 1 #Individual weight
+                weightSum = 0 #sum of all weights found when updating the weights
+                self.relList.append([self.normalizedFeatureList[self.images_tup[0][3]], 0, self.images_tup[0][0]]) #Always append the first/query image
+                for i in range(1, 100): #Append images to relList that have their check button toggled on
                     if self.varList[i].get() == 1:
                         self.relList.append([self.normalizedFeatureList[self.images_tup[i][3]], i, self.images_tup[i][0]])                                
-                print(len(self.relList))
-                for i in range(89):
-                    sample = []
+                for i in range(89): #Goes over all 89 features of each image.
+                    sample = [] #list that will hold all the samples (normalized features of a specific feature colum of each image row)
                     for j in range(len(self.relList)):
-                        sample.append(self.relList[j][0][i])
-                    stdeviation = statistics.stdev(sample)
-                    if(stdeviation < minStdev and stdeviation != 0):
-                        minStdev = stdeviation
-                    average = statistics.mean(sample)
-                    stdevavgList.append([stdeviation, average])
-                for i in range(89):
-                    if stdevavgList[i][0] == 0 and stdevavgList[i][1] != 0:
-                        stdevavgList[i][0] = 0.5 * minStdev
-                        weight = 1/stdevavgList[i][0]
-                    elif stdevavgList[i][0] == 0 and stdevavgList[i][1] == 0:
+                        sample.append(self.relList[j][0][i]) #appends the same normalized feature index of each image to the sample list
+                    stdeviation = statistics.stdev(sample) #calculates the standard deviation of the normalized features.
+                    if(stdeviation < minStdev and stdeviation != 0): #minimum standard deviation to be updated for edge case.
+                        minStdev = stdeviation 
+                    average = statistics.mean(sample) #calculates the average of the specific feature in all images.
+                    stdevavgList.append([stdeviation, average]) #appends the stedivation of a feature and the average.
+                for i in range(89): #goes over all 89 features again to calculate the weight of each feature.
+                    if stdevavgList[i][0] == 0 and stdevavgList[i][1] != 0: #edge case if the standard deviation of a feature is 0 but the average is not.
+                        stdevavgList[i][0] = 0.5 * minStdev #updates the specific standard deviation of that feature.
+                        weight = 1/stdevavgList[i][0] #gets the weight of the feature.
+                    elif stdevavgList[i][0] == 0 and stdevavgList[i][1] == 0: #edge case if the standard deviation of a feature is 0 and the average is 0
                         weight = 0
                     else:
-                        weight = 1 / stdevavgList[i][0]
-                    weightSum += weight
-                    weightList.append(weight)
-                for i in range(89):
+                        weight = 1 / stdevavgList[i][0] #gets the weight of the feature.
+                    weightSum += weight #sum of all weights gets updated and then appended to the weightList for normalized weight calculation.
+                    weightList.append(weight) 
+                for i in range(89): #goes over the 80 featuers again to calcaulate and reupdate the weightList to hold all normalzied weights for each feature.
                     weightList[i] /= weightSum
-                for i in range(1, 100):
+                for i in range(1, 100): #goes over all images with their weights and features and calculates the updated distance with the updated weight.
                     distance = 0
                     for j in range(89):
                         distance += weightList[j] * abs(self.relList[0][0][j] - self.normalizedFeatureList[self.images_tup[i][3]][j])
                     self.images_tup[i][2] = distance
-                return self.images_tup
-            self.relCheckButton.pack(side=TOP)
-            selectedFeats = self.normalizedFeatureList[selected]
-            for i in self.normalizedFeatureList:
+                return self.images_tup #new list with the updated distances being returned.
+            #Only used for initial iteration of RF
+            self.relCheckButton.pack(side=TOP) #Show the relevence check button for only CC + Intensity method
+            selectedFeats = self.normalizedFeatureList[selected] #Grab the feature list of the query image
+            for i in self.normalizedFeatureList: #For every feature in the normalized feature list, calculate the manhattan distance using an initial weight of 1/89
                 distance = 0
                 for j in range(len(i)):
                     distance += 1/89 * abs(selectedFeats[j] - self.normalizedFeatureList[count][j])
-                distanceList.append([self.imageList[count], self.photoList[count], distance, count])
+                distanceList.append([self.imageList[count], self.photoList[count], distance, count]) #Count is used to keep track of the image in reference to it's feature list in the normalized feature list
                 count += 1
 
         elif method == "CC":
@@ -275,7 +274,7 @@ class ImageViewer(Frame):
         # Initialize the canvas with dimensions equal to the 
         # number of results.
         self.canvas.delete(ALL)
-        self.canvas.config(width=self.xmax*cols, height=self.ymax*cols/1.25)
+        self.canvas.config(width=self.xmax*cols, height=self.ymax*cols/1.25) #Set the result window size to an appropriate aspect ratio
         self.canvas.pack()
         
         photoRemain = sortedTup
@@ -295,10 +294,10 @@ class ImageViewer(Frame):
                 link.config(command=handler)
                 link.pack(side=LEFT)
                 self.canvas.create_window(colPos, rowPos, anchor=NW, window=link, width=self.xmax, height=self.ymax)
-                if self.var1.get() == 1:
+                if self.var1.get() == 1: #Put the relevance buttons under every image when the relevant check button is toggled on 
                     relButton = Checkbutton(link, text="relevant", variable = self.varList[self.list_iterator + counter], onvalue=1, offvalue=0)
                     relButton.pack(side=BOTTOM)  
-                else:
+                else: #Otherwise reset the varList to 0
                     for i in range(100):
                         self.varList[i] = IntVar()
                 colPos += self.xmax
