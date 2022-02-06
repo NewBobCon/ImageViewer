@@ -7,7 +7,7 @@
 from tkinter import *
 import math, os, sys, subprocess
 from PixInfo import PixInfo
-
+import statistics
 # Main app.
 class ImageViewer(Frame):
     
@@ -37,9 +37,10 @@ class ImageViewer(Frame):
         #Relevancy CheckButton variable list
         self.varList = []
 
+        self.relList = []
+
         for i in range(100):
             self.varList.append(IntVar())
-        print(len(self.varList))
         
         
         # Create Main frame.
@@ -129,11 +130,18 @@ class ImageViewer(Frame):
         sortedTup = []
         sortedTup = self.man_dis(method, selected) #Get manhattan distance on the selected image using proper method. Returns as [[filename, image_preview, distance_val]]
         sortedTup.sort(key=lambda x: x[2]) #Sort by the distance value returned
-        for i in range(len(sortedTup)): #Iterate through the sorted list to retrieve the file names and images for proper output to results page
-            filename = sortedTup[i][0].filename
-            img = sortedTup[i][1]
-            fileObj = [filename, img]
-            sortedTup[i] = fileObj
+        if self.varList[0].get() == 0:
+            for i in range(len(sortedTup)): #Iterate through the sorted list to retrieve the file names and images for proper output to results page
+                filename = sortedTup[i][0].filename
+                sortedTup[i][0] = filename
+        else:
+            for i, im in enumerate(sortedTup):
+                for rel in self.relList:
+                    if im[0] == rel[2]:
+                        self.varList[i].set(1)
+                        break
+                    else:
+                        self.varList[i].set(0)
         self.images_tup = sortedTup #Allow self to reference the sorted list
         self.show_next(sortedTup) #Push the sorted images to the results screen
         return
@@ -150,15 +158,53 @@ class ImageViewer(Frame):
         if method == "CC+inten":
             if self.queryChange:
                 for i in range(100):
-                    self.varList[i] = IntVar()
+                    self.varList[i] = IntVar()  
                 self.queryChange = False
+            if self.varList[0].get() != 0:
+                stdevavgList = []
+                weightList = []
+                minStdev = sys.maxsize
+                weight = 1
+                weightSum = 0
+                self.relList.append([self.normalizedFeatureList[self.images_tup[0][3]], 0, self.images_tup[0][0]])
+                for i in range(1, 100):
+                    if self.varList[i].get() == 1 and self.normalizedFeatureList[self.images_tup[i][3]] not in self.relList:
+                        self.relList.append([self.normalizedFeatureList[self.images_tup[i][3]], i, self.images_tup[i][0]])
+                for i in range(89):
+                    sample = []
+                    for j in range(len(self.relList)):
+                        sample.append(self.relList[j][0][i])
+                    stdeviation = statistics.stdev(sample)
+                    if(stdeviation < minStdev and stdeviation != 0):
+                        minStdev = stdeviation
+                    average = statistics.mean(sample)
+                    stdevavgList.append([stdeviation, average])
+                for i in range(89):
+                    if stdevavgList[i][0] == 0 and stdevavgList[i][1] != 0:
+                        stdevavgList[i][0] = 0.5 * minStdev
+                        weight = 1/stdevavgList[i][0]
+                    elif stdevavgList[i][0] == 0 and stdevavgList[i][1] == 0:
+                        weight = 0
+                    else:
+                        weight = 1 / stdevavgList[i][0]
+                    weightSum += weight
+                    weightList.append(weight)
+                for i in range(89):
+                    weightList[i] /= weightSum
+                for i in range(1, 100):
+                    distance = 0
+                    for j in range(89):
+                        distance += weightList[j] * abs(self.relList[0][0][j] - self.normalizedFeatureList[self.images_tup[i][3]][j])
+                    self.images_tup[i][2] = distance
+                return self.images_tup
+
             self.relCheckButton.pack(side=TOP)
             selectedFeats = self.normalizedFeatureList[selected]
             for i in self.normalizedFeatureList:
                 distance = 0
                 for j in range(len(i)):
                     distance += 1/89 * abs(selectedFeats[j] - self.normalizedFeatureList[count][j])
-                distanceList.append([self.imageList[count], self.photoList[count], distance])
+                distanceList.append([self.imageList[count], self.photoList[count], distance, count])
                 count += 1
             # selectedCC = self.colorCode[selected]
             # selectedIn = self.intenCode[selected]                
@@ -183,7 +229,7 @@ class ImageViewer(Frame):
                 for j in range(len(i)):
                     otherPixSize = self.pixSizeList[count]
                     distance += abs((selectedCC[j] / selectedPixSize) - (i[j] / otherPixSize))  
-                distanceList.append([self.imageList[count], self.photoList[count] ,distance])
+                distanceList.append([self.imageList[count], self.photoList[count] ,distance, count])
                 count += 1
         elif method == "inten":
             if(self.var1.get() == 1):
@@ -197,7 +243,7 @@ class ImageViewer(Frame):
                 for j in range(len(i)):
                     otherPixSize = self.pixSizeList[count]
                     distance += abs((selectedIn[j] / selectedPixSize) - (i[j] / otherPixSize))  
-                distanceList.append([self.imageList[count], self.photoList[count] ,distance])
+                distanceList.append([self.imageList[count], self.photoList[count] ,distance, count])
                 count += 1
         return distanceList
 
@@ -250,16 +296,15 @@ class ImageViewer(Frame):
             photoRow = photoRemain[:cols]
             photoRemain = photoRemain[cols:]
             colPos = 0
-            for (filename, img) in photoRow:
+            for (filename, img, distance, index) in photoRow:
                 link = Button(self.canvas, image=img)
                 handler = lambda f=filename: self.inspect_pic(f)
                 link.config(command=handler)
                 link.pack(side=LEFT)
                 self.canvas.create_window(colPos, rowPos, anchor=NW, window=link, width=self.xmax, height=self.ymax)
                 if self.var1.get() == 1:
-                    print(self.list_iterator + counter)
                     relButton = Checkbutton(link, text="relevant", variable = self.varList[self.list_iterator + counter], onvalue=1, offvalue=0)
-                    relButton.pack(side=BOTTOM)
+                    relButton.pack(side=BOTTOM)  
                 else:
                     for i in range(100):
                         self.varList[i] = IntVar()

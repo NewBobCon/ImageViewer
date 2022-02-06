@@ -58,7 +58,7 @@ class PixInfo:
 
         # Create a list of pixel data for each image and add it
         # to a list.
-        for im in self.imageList[:]:
+        for index, im in enumerate(self.imageList[:]):
             
             pixList = list(im.getdata())
             self.pixSizeList.append(len(pixList))
@@ -70,6 +70,7 @@ class PixInfo:
                 Features.append(j / len(pixList))
             for j in InBins:
                 Features.append(j / len(pixList))
+            
             self.normalizedFeatureList.append(Features)
 
         for i in range(89):
